@@ -1,4 +1,4 @@
-# ColigationScheduler
+# WinAffinityEnforcer
 
 A small, ad-free, background-only Windows CPU affinity enforcer. No window, tray icon, telemetry, service, or external packages. Matches all instances of an executable by name and periodically reapplies affinity, including after a process restarts.
 
@@ -27,7 +27,7 @@ Edit `affinity.json` beside the published EXE. Initially it has **no rules**, so
 
 Replace `example.exe` with the executable name shown in Task Manager's Details tab. CPU numbers are **zero-based logical processors**, not physical cores. Do not assume particular numbers mean P-cores/E-cores. `.exe` is optional; matching is case-insensitive. Each name may appear only once; paths and wildcards are not supported.
 
-Double-click `ColigationScheduler.exe` to start it silently. It reads the JSON every polling interval, applies rules to existing processes, and catches new processes on the next poll. Short-lived processes can exit before that poll. Invalid edits keep the last valid configuration; an invalid configuration at startup prevents the app from starting. Errors are logged to `%LOCALAPPDATA%\ColigationScheduler\scheduler.log`, with one rotated backup.
+Double-click `WinAffinityEnforcer.exe` to start it silently. It reads the JSON every polling interval, applies rules to existing processes, and catches new processes on the next poll. Short-lived processes can exit before that poll. Invalid edits keep the last valid configuration; an invalid configuration at startup prevents the app from starting. Errors are logged to `%LOCALAPPDATA%\WinAffinityEnforcer\scheduler.log`, with one rotated backup.
 
 Only one instance per configuration path can run in each Windows session. Optional arguments: `--config "C:\path\rules.json"`, `--validate` (exit code 0 if valid, 1 otherwise; results in log), and `--stop`. When using a custom configuration, pass the same `--config` path with `--stop`.
 
@@ -56,5 +56,5 @@ Stopping or removing a rule does **not** undo affinity already applied to a runn
 ## Tests
 
 ```powershell
-dotnet run --project tests/ColigationScheduler.Tests.csproj
+dotnet run --project tests/WinAffinityEnforcer.Tests.csproj
 ```

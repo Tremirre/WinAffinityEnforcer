@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace ColigationScheduler;
+namespace WinAffinityEnforcer;
 
 public sealed class Configuration
 {

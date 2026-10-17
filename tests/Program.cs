@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using ColigationScheduler;
+using WinAffinityEnforcer;
 
 if (args.Contains("--target"))
 {
@@ -62,10 +62,10 @@ Reject("{\"rules\":[{\"processName\":\"C:/a.exe\",\"cpus\":[0]}]}", "Reject exec
 Reject("{\"rulez\":[]}", "Reject misspelled settings");
 
 // Integration tests only target this test executable, never unrelated user processes.
-var directory = Path.Combine(Path.GetTempPath(), "ColigationScheduler-tests-" + Guid.NewGuid().ToString("N"));
+var directory = Path.Combine(Path.GetTempPath(), "WinAffinityEnforcer-tests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(directory);
 var configPath = Path.Combine(directory, "rules.json");
-var schedulerExe = Path.Combine(AppContext.BaseDirectory, "ColigationScheduler.exe");
+var schedulerExe = Path.Combine(AppContext.BaseDirectory, "WinAffinityEnforcer.exe");
 var targetExe = Environment.ProcessPath!;
 Process? target = null;
 Process? scheduler = null;

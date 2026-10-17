@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ColigationScheduler;
+namespace WinAffinityEnforcer;
 
 internal static class Program
 {
@@ -38,7 +38,7 @@ internal static class Program
 
             // Separate configurations can run independently; the same one cannot run twice.
             var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(configPath.ToUpperInvariant())))[..24];
-            var eventName = $@"Local\ColigationScheduler.Stop.{key}";
+            var eventName = $@"Local\WinAffinityEnforcer.Stop.{key}";
             if (stop)
             {
                 try
@@ -60,7 +60,7 @@ internal static class Program
                 return 0;
             }
 
-            using var mutex = new Mutex(true, $@"Local\ColigationScheduler.Instance.{key}", out var isNew);
+            using var mutex = new Mutex(true, $@"Local\WinAffinityEnforcer.Instance.{key}", out var isNew);
             if (!isNew) return 0;
             using var stopEvent = new EventWaitHandle(false, EventResetMode.ManualReset, eventName);
             log.Write($"Started. Configuration: {configPath}; {cpuCount} logical CPUs.");
@@ -142,7 +142,7 @@ internal static class Program
 
 internal sealed class AppLog
 {
-    private readonly string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ColigationScheduler", "scheduler.log");
+    private readonly string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WinAffinityEnforcer", "scheduler.log");
 
     public void Write(string message)
     {
