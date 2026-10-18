@@ -9,7 +9,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
-    <None Update="affinity.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Update="scripts/*.ps1" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

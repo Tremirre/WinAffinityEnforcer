@@ -50,6 +50,7 @@ Check(rule.Mask == 0x8000000000000009UL, "64-bit affinity mask including CPU 63"
 Check(new AffinityRule { ProcessName = "a", Cpus = [0], Priority = "high" }.PriorityClass == ProcessPriorityClass.High, "Priority name parses case-insensitively");
 Check(new AffinityRule { ProcessName = "a", Cpus = [0] }.PriorityClass is null, "Missing priority leaves the process alone");
 Check(CpuTopology.GetCpuSets().Count > 0, "CPU set enumeration returns logical processors");
+Check(AppPaths.ConfigFile.Replace('\\', '/').EndsWith("/.config/WinAffinityEnforcer/affinity.json", StringComparison.OrdinalIgnoreCase), "Default config lives under ~/.config");
 new Configuration().Validate(8);
 Check(true, "Empty rules are safe");
 Reject("null", "Reject null configuration");

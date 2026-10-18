@@ -14,13 +14,22 @@ internal static class Program
     [DllImport("kernel32.dll")]
     private static extern uint GetActiveProcessorCount(ushort groupNumber);
 
+    private const string DefaultConfig =
+        """
+        {
+          "pollIntervalSeconds": 2,
+          "rules": []
+        }
+        """;
+
     [STAThread]
     private static int Main(string[] args)
     {
         var log = new AppLog();
         try
         {
-            var configPath = Path.Combine(AppContext.BaseDirectory, "affinity.json");
+            var configPath = AppPaths.ConfigFile;
+            var customConfig = false;
             var stop = false;
             var validate = false;
             var listCpus = false;
@@ -30,6 +39,7 @@ internal static class Program
                 {
                     case "--config" when i + 1 < args.Length:
                         configPath = Path.GetFullPath(args[++i]);
+                        customConfig = true;
                         break;
                     case "--stop": stop = true; break;
                     case "--validate": validate = true; break;
@@ -64,6 +74,15 @@ internal static class Program
             if (GetActiveProcessorGroupCount() != 1)
                 throw new NotSupportedException("Multiple processor groups detected. This version only supports systems with one group (up to 64 logical CPUs).");
             var cpuCount = checked((int)GetActiveProcessorCount(0));
+            if (!File.Exists(configPath))
+            {
+                // A typo in --config should fail loudly, but a first run just works.
+                if (customConfig)
+                    throw new FileNotFoundException($"Configuration file not found: {configPath}");
+                Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+                File.WriteAllText(configPath, DefaultConfig);
+                log.Write($"Created an empty configuration: {configPath}");
+            }
             var config = Configuration.Load(configPath, cpuCount);
             if (validate)
             {
@@ -166,7 +185,7 @@ internal static class Program
 
 internal sealed class AppLog
 {
-    private readonly string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WinAffinityEnforcer", "scheduler.log");
+    private readonly string path = AppPaths.LogFile;
 
     public void Write(string message)
     {

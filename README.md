@@ -10,11 +10,11 @@ Requires the .NET 10 SDK on Windows x64:
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
 ```
 
-The resulting `publish` folder is portable; the target computer does not need .NET installed. Keep the EXE, `affinity.json`, and `scripts` folder together. The app is not automatically started or registered during build.
+The resulting `publish` folder is portable; the target computer does not need .NET installed. Keep the EXE and the `scripts` folder together. The app is not automatically started or registered during build, and it keeps no configuration in its own folder.
 
 ## Configure
 
-Edit `affinity.json` beside the published EXE. Initially it has **no rules**, so nothing is changed. For example:
+Rules live in `%USERPROFILE%\.config\WinAffinityEnforcer\affinity.json` (`~/.config/WinAffinityEnforcer/affinity.json`). The file is created automatically on the first run with **no rules**, so nothing is changed until you add one. Because the configuration never sits beside the EXE, rebuilding or moving the `publish` folder cannot disturb it. For example:
 
 ```json
 {
@@ -31,7 +31,7 @@ Replace `example.exe` with the executable name shown in Task Manager's Details t
 
 Double-click `WinAffinityEnforcer.exe` to start it silently. It reads the JSON every polling interval, applies rules to existing processes, and catches new processes on the next poll. Short-lived processes can exit before that poll. Invalid edits keep the last valid configuration; an invalid configuration at startup prevents the app from starting. Errors are logged to `%LOCALAPPDATA%\WinAffinityEnforcer\scheduler.log`, with one rotated backup.
 
-Only one instance per configuration path can run in each Windows session. Optional arguments: `--config "C:\path\rules.json"`, `--validate` (exit code 0 if valid, 1 otherwise; results go to the log), `--list-cpus` (prints the CPU layout; results go to the log and to standard output), and `--stop`. When using a custom configuration, pass the same `--config` path with `--stop`.
+Only one instance per configuration path can run in each Windows session. Optional arguments: `--config "C:\path\rules.json"` (a path that does not exist is an error rather than being created automatically), `--validate` (exit code 0 if valid, 1 otherwise; results go to the log), `--list-cpus` (prints the CPU layout; results go to the log and to standard output), and `--stop`. When using a custom configuration, pass the same `--config` path with `--stop`.
 
 ## Hybrid CPUs (P-cores and E-cores)
 
@@ -52,7 +52,7 @@ P-cores (fastest, EfficiencyClass 1): 0, 1, 10, 11, 12, 13, 22, 23
 E-cores (EfficiencyClass 0): 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19, 20, 21
 ```
 
-The `affinity.json` in this repository is tuned for that machine: `rome2.exe` (Total War: Rome II) is limited to all eight P-cores and raised to `High` priority.
+On that machine the configuration is: `rome2.exe` (Total War: Rome II) limited to all eight P-cores and raised to `High` priority.
 
 ## Start with Windows / stop
 
@@ -64,7 +64,7 @@ Run these in PowerShell from the published folder:
 .\scripts\Disable-Startup.ps1
 ```
 
-Startup is opt-in, current-user only, and happens **at sign-in**, not before anyone logs in. The startup script registers the EXE in the current user's `Run` registry key; it does not launch it immediately. Run it again after moving the folder. The scripts use the default configuration beside the EXE. Your PowerShell execution policy may require explicitly allowing the local scripts.
+Startup is opt-in, current-user only, and happens **at sign-in**, not before anyone logs in. The startup script registers the EXE in the current user's `Run` registry key; it does not launch it immediately. Run it again after moving the folder. The scripts use the default configuration location. Your PowerShell execution policy may require explicitly allowing the local scripts.
 
 Stopping or removing a rule does **not** undo affinity already applied to a running process. Restart that process or restore its affinity in Task Manager.
 
