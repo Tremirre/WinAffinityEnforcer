@@ -1,4 +1,9 @@
 {
   "pollIntervalSeconds": 2,
-  "rules": []
+  "rules": [
+    {
+      "processName": "rome2.exe",
+      "cpus": [0, 1, 10, 11, 12, 13]
+    }
+  ]
 }

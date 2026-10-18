@@ -29,7 +29,28 @@ Replace `example.exe` with the executable name shown in Task Manager's Details t
 
 Double-click `WinAffinityEnforcer.exe` to start it silently. It reads the JSON every polling interval, applies rules to existing processes, and catches new processes on the next poll. Short-lived processes can exit before that poll. Invalid edits keep the last valid configuration; an invalid configuration at startup prevents the app from starting. Errors are logged to `%LOCALAPPDATA%\WinAffinityEnforcer\scheduler.log`, with one rotated backup.
 
-Only one instance per configuration path can run in each Windows session. Optional arguments: `--config "C:\path\rules.json"`, `--validate` (exit code 0 if valid, 1 otherwise; results in log), and `--stop`. When using a custom configuration, pass the same `--config` path with `--stop`.
+Only one instance per configuration path can run in each Windows session. Optional arguments: `--config "C:\path\rules.json"`, `--validate` (exit code 0 if valid, 1 otherwise; results go to the log), `--list-cpus` (prints the CPU layout; results go to the log and to standard output), and `--stop`. When using a custom configuration, pass the same `--config` path with `--stop`.
+
+## Hybrid CPUs (P-cores and E-cores)
+
+On Intel hybrid CPUs (12th generation and newer), logical CPU numbers do **not** put the P-cores first, and the layout differs from machine to machine, so never copy CPU numbers from a forum post.
+
+Run `WinAffinityEnforcer.exe --list-cpus` to print the real layout. The app has no console window, so redirect the output or read the log:
+
+```powershell
+.\WinAffinityEnforcer.exe --list-cpus > cpus.txt
+Get-Content "$env:LOCALAPPDATA\WinAffinityEnforcer\scheduler.log" -Tail 5
+```
+
+Windows gives the faster P-cores the **higher** `EfficiencyClass` and the E-cores the lower one. For example, an Intel Core Ultra 9 285K (8 P-cores, 16 E-cores, no Hyper-Threading) reports:
+
+```text
+Logical CPUs: 24
+P-cores (fastest, EfficiencyClass 1): 0, 1, 10, 11, 12, 13, 22, 23
+E-cores (EfficiencyClass 0): 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19, 20, 21
+```
+
+The `affinity.json` in this repository is tuned for that machine: `rome2.exe` (Total War: Rome II) is limited to six P-cores.
 
 ## Start with Windows / stop
 

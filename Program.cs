@@ -23,6 +23,7 @@ internal static class Program
             var configPath = Path.Combine(AppContext.BaseDirectory, "affinity.json");
             var stop = false;
             var validate = false;
+            var listCpus = false;
             for (var i = 0; i < args.Length; i++)
             {
                 switch (args[i])
@@ -32,8 +33,18 @@ internal static class Program
                         break;
                     case "--stop": stop = true; break;
                     case "--validate": validate = true; break;
+                    case "--list-cpus": listCpus = true; break;
                     default: throw new ArgumentException($"Unknown or incomplete argument: {args[i]}");
                 }
+            }
+
+            if (listCpus)
+            {
+                // No console window exists, so this is also written to the log; stdout works when redirected.
+                var topology = CpuTopology.Describe();
+                log.Write($"CPU topology:{Environment.NewLine}{topology}");
+                Console.WriteLine(topology);
+                return 0;
             }
 
             // Separate configurations can run independently; the same one cannot run twice.

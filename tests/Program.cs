@@ -47,6 +47,7 @@ Process Start(string exe, params string[] arguments)
 var rule = new AffinityRule { ProcessName = "Example.EXE", Cpus = [0, 3, 63] };
 Check(rule.BaseName == "Example", "Executable suffix normalization");
 Check(rule.Mask == 0x8000000000000009UL, "64-bit affinity mask including CPU 63");
+Check(CpuTopology.GetCpuSets().Count > 0, "CPU set enumeration returns logical processors");
 new Configuration().Validate(8);
 Check(true, "Empty rules are safe");
 Reject("null", "Reject null configuration");
