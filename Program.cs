@@ -133,7 +133,20 @@ internal static class Program
                     }
                     catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or NotSupportedException)
                     {
-                        LogThrottled(failures, rule.BaseName, $"Cannot set affinity for {rule.ProcessName}: {ex.Message} Elevated processes may require running this utility as administrator.", log);
+                        LogThrottled(failures, rule.BaseName + "|affinity", $"Cannot set affinity for {rule.ProcessName}: {ex.Message} Elevated processes may require running this utility as administrator.", log);
+                    }
+
+                    if (rule.PriorityClass is { } priority)
+                    {
+                        try
+                        {
+                            if (process.PriorityClass != priority)
+                                process.PriorityClass = priority;
+                        }
+                        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or NotSupportedException)
+                        {
+                            LogThrottled(failures, rule.BaseName + "|priority", $"Cannot set priority for {rule.ProcessName}: {ex.Message} Raising another process to High or RealTime can require running this utility as administrator.", log);
+                        }
                     }
                 }
             }

@@ -20,12 +20,14 @@ Edit `affinity.json` beside the published EXE. Initially it has **no rules**, so
 {
   "pollIntervalSeconds": 2,
   "rules": [
-    { "processName": "example.exe", "cpus": [0, 1, 2, 3] }
+    { "processName": "example.exe", "cpus": [0, 1, 2, 3], "priority": "High" }
   ]
 }
 ```
 
-Replace `example.exe` with the executable name shown in Task Manager's Details tab. CPU numbers are **zero-based logical processors**, not physical cores. Do not assume particular numbers mean P-cores/E-cores. `.exe` is optional; matching is case-insensitive. Each name may appear only once; paths and wildcards are not supported.
+Replace `example.exe` with the executable name shown in Task Manager's Details tab. CPU numbers are **zero-based logical processors**, not physical cores. Do not assume particular numbers mean P-cores/E-cores; see the next section. `.exe` is optional; matching is case-insensitive. Each name may appear only once; paths and wildcards are not supported.
+
+`priority` is optional. Omit it and the process priority is left alone. Accepted values, case-insensitive: `Idle`, `BelowNormal`, `Normal`, `AboveNormal`, `High`, `RealTime`. `RealTime` is strongly discouraged: it can starve the entire system, including this utility, leaving you with no choice but a hard reset. `High` is normally the highest value worth using for a game. Raising another process to `High` or `RealTime` can require running this utility as administrator. As with affinity, priority is enforced while the rule exists but is **not undone** when you remove the rule or stop the utility.
 
 Double-click `WinAffinityEnforcer.exe` to start it silently. It reads the JSON every polling interval, applies rules to existing processes, and catches new processes on the next poll. Short-lived processes can exit before that poll. Invalid edits keep the last valid configuration; an invalid configuration at startup prevents the app from starting. Errors are logged to `%LOCALAPPDATA%\WinAffinityEnforcer\scheduler.log`, with one rotated backup.
 
@@ -50,7 +52,7 @@ P-cores (fastest, EfficiencyClass 1): 0, 1, 10, 11, 12, 13, 22, 23
 E-cores (EfficiencyClass 0): 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19, 20, 21
 ```
 
-The `affinity.json` in this repository is tuned for that machine: `rome2.exe` (Total War: Rome II) is limited to six P-cores.
+The `affinity.json` in this repository is tuned for that machine: `rome2.exe` (Total War: Rome II) is limited to all eight P-cores and raised to `High` priority.
 
 ## Start with Windows / stop
 
@@ -69,7 +71,7 @@ Stopping or removing a rule does **not** undo affinity already applied to a runn
 ## Limitations
 
 - Windows x64, one processor group, at most 64 logical CPUs. Multi-group machines are explicitly rejected rather than silently applying the wrong mask.
-- Uses hard process affinity, not CPU Sets or thread-specific rules. No priorities or power plans are changed.
+- Changes whole-process affinity and process priority class only. No CPU Sets, thread-level affinity, I/O priority, or power plans.
 - Elevated processes generally require launching this utility as administrator. The optional sign-in entry does not elevate it. Protected processes can reject affinity changes even with administrator rights.
 - Rules apply to every accessible process with the matching executable name; no path/user filtering. Children with different names need their own rules (Windows may also inherit affinity on process creation).
 - Enforcement is periodic, not instantaneous. Other programs changing affinity can conflict with these rules.

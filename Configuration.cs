@@ -1,9 +1,13 @@
+using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace WinAffinityEnforcer;
 
 public sealed class Configuration
 {
+    private static readonly string[] KnownPriorities = Enum.GetNames<ProcessPriorityClass>();
+
     public int PollIntervalSeconds { get; set; } = 2;
     public List<AffinityRule> Rules { get; set; } = [];
 
@@ -12,7 +16,7 @@ public sealed class Configuration
         var options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
-            UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow
+            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
         };
         var config = JsonSerializer.Deserialize<Configuration>(File.ReadAllText(path), options)
             ?? throw new InvalidDataException("Configuration cannot be null.");
@@ -42,6 +46,8 @@ public sealed class Configuration
                 throw new InvalidDataException($"{rule.ProcessName}: cpus must contain logical CPU numbers from 0 to {cpuCount - 1}.");
             if (rule.Cpus.Distinct().Count() != rule.Cpus.Count)
                 throw new InvalidDataException($"{rule.ProcessName}: duplicate CPU numbers.");
+            if (rule.Priority is { } priority && !KnownPriorities.Contains(priority, StringComparer.OrdinalIgnoreCase))
+                throw new InvalidDataException($"{rule.ProcessName}: unknown priority '{priority}'. Use one of: {string.Join(", ", KnownPriorities)}.");
         }
     }
 }
@@ -50,9 +56,18 @@ public sealed class AffinityRule
 {
     public string ProcessName { get; set; } = "";
     public List<int> Cpus { get; set; } = [];
-    [System.Text.Json.Serialization.JsonIgnore]
+
+    /// <summary>Optional. Null leaves the process priority alone.</summary>
+    public string? Priority { get; set; }
+
+    [JsonIgnore]
     public string BaseName => ProcessName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
         ? ProcessName[..^4] : ProcessName;
-    [System.Text.Json.Serialization.JsonIgnore]
+
+    [JsonIgnore]
     public ulong Mask => Cpus.Aggregate(0UL, (mask, cpu) => mask | (1UL << cpu));
+
+    [JsonIgnore]
+    public ProcessPriorityClass? PriorityClass =>
+        Priority is not null && Enum.TryParse<ProcessPriorityClass>(Priority, ignoreCase: true, out var value) ? value : null;
 }

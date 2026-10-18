@@ -47,6 +47,8 @@ Process Start(string exe, params string[] arguments)
 var rule = new AffinityRule { ProcessName = "Example.EXE", Cpus = [0, 3, 63] };
 Check(rule.BaseName == "Example", "Executable suffix normalization");
 Check(rule.Mask == 0x8000000000000009UL, "64-bit affinity mask including CPU 63");
+Check(new AffinityRule { ProcessName = "a", Cpus = [0], Priority = "high" }.PriorityClass == ProcessPriorityClass.High, "Priority name parses case-insensitively");
+Check(new AffinityRule { ProcessName = "a", Cpus = [0] }.PriorityClass is null, "Missing priority leaves the process alone");
 Check(CpuTopology.GetCpuSets().Count > 0, "CPU set enumeration returns logical processors");
 new Configuration().Validate(8);
 Check(true, "Empty rules are safe");
@@ -61,6 +63,8 @@ Reject("{\"rules\":[{\"processName\":\"a\",\"cpus\":[1,1]}]}", "Reject duplicate
 Reject("{\"rules\":[{\"processName\":\"a\",\"cpus\":[0]},{\"processName\":\"A.exe\",\"cpus\":[1]}]}", "Reject conflicting process rules");
 Reject("{\"rules\":[{\"processName\":\"C:/a.exe\",\"cpus\":[0]}]}", "Reject executable paths");
 Reject("{\"rulez\":[]}", "Reject misspelled settings");
+Reject("{\"rules\":[{\"processName\":\"a\",\"cpus\":[0],\"priority\":\"Faster\"}]}", "Reject unknown priority");
+Reject("{\"rules\":[{\"processName\":\"a\",\"cpus\":[0],\"priority\":\"2\"}]}", "Reject numeric priority");
 
 // Integration tests only target this test executable, never unrelated user processes.
 var directory = Path.Combine(Path.GetTempPath(), "WinAffinityEnforcer-tests-" + Guid.NewGuid().ToString("N"));
@@ -77,10 +81,10 @@ try
     var available = unchecked((ulong)(long)originalAffinity);
     var firstCpu = Enumerable.Range(0, 64).First(cpu => (available & (1UL << cpu)) != 0);
     var desired = unchecked((nint)(1UL << firstCpu));
-    string Config(int cpu) => System.Text.Json.JsonSerializer.Serialize(new
+    string Config(int cpu, string? priority = null) => System.Text.Json.JsonSerializer.Serialize(new
     {
         pollIntervalSeconds = 1,
-        rules = new[] { new { processName = Path.GetFileName(targetExe), cpus = new[] { cpu } } }
+        rules = new[] { new { processName = Path.GetFileName(targetExe), cpus = new[] { cpu }, priority } }
     });
     File.WriteAllText(configPath, Config(firstCpu));
     target = Start(targetExe, "--target");
@@ -89,6 +93,10 @@ try
     Check(!scheduler.HasExited, "Background scheduler remains running");
     using (var duplicate = Start(schedulerExe, "--config", configPath))
         Check(duplicate.WaitForExit(5000) && duplicate.ExitCode == 0, "Duplicate instance exits cleanly");
+
+    File.WriteAllText(configPath, Config(firstCpu, "High"));
+    Check(WaitFor(() => { target.Refresh(); return target.PriorityClass == ProcessPriorityClass.High; }), "Apply process priority");
+    File.WriteAllText(configPath, Config(firstCpu));
 
     File.WriteAllText(configPath, "{\"pollIntervalSeconds\":0}");
     Thread.Sleep(1800);
